@@ -2,12 +2,12 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "projectile.png",
+      "filename" : "spike.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "projectile@2x.png",
+      "filename" : "spike@2x.png",
       "scale" : "2x"
     },
     {
