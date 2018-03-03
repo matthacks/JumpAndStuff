@@ -273,14 +273,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(coin3)
     }
     
-    func addSpikeToBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
-        let spike = SKSpriteNode(imageNamed: "spike")
+    func addSpikeToBottomOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
+        let spike = SKSpriteNode(imageNamed: "spikeDown")
         var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y:  -spike.size.height*1.25), duration: TimeInterval(duration))
         spike.position = CGPoint(x: block.position.x, y: block.position.y - spike.size.height*1.25)
         addChild(spike)
         spike.zPosition = 10
         spike.name = spikeName
-        spike.physicsBody = SKPhysicsBody(rectangleOf: spike.frame.size)
+        spike.physicsBody = SKPhysicsBody(texture: spike.texture!, size: spike.size)
         spike.physicsBody?.categoryBitMask = PhysicsCategory.Spike
         spike.physicsBody?.contactTestBitMask = PhysicsCategory.All
         spike.physicsBody!.isDynamic = false
@@ -296,6 +296,34 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let spike3 = spike.copy() as! SKSpriteNode
         spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination + spike.size.width*1.25 , y:  -spike.size.height*1.25), duration: TimeInterval(duration))
+        spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.25, y: spike.position.y)
+        spike3.run(SKAction.sequence([spikeMove, actionMoveDone]))
+        addChild(spike3)
+    }
+    
+    func addSpikeToTopOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
+        let spike = SKSpriteNode(imageNamed: "spikeUp")
+        var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y:  spike.size.height*1.25), duration: TimeInterval(duration))
+        spike.position = CGPoint(x: block.position.x, y: block.position.y + spike.size.height*1.25)
+        addChild(spike)
+        spike.zPosition = 10
+        spike.name = spikeName
+        spike.physicsBody = SKPhysicsBody(texture: spike.texture!, size: spike.size)
+        spike.physicsBody?.categoryBitMask = PhysicsCategory.Spike
+        spike.physicsBody?.contactTestBitMask = PhysicsCategory.All
+        spike.physicsBody!.isDynamic = false
+        spike.physicsBody?.affectedByGravity = true
+        spike.physicsBody?.mass = 0.1
+        spike.run(SKAction.sequence([spikeMove, actionMoveDone]))
+        
+        let spike2 = spike.copy() as! SKSpriteNode
+        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination - spike.size.width*1.25 , y: spike.size.height*1.25), duration: TimeInterval(duration))
+        spike2.position = CGPoint(x: spike.position.x - spike.size.width*1.25, y: spike.position.y)
+        spike2.run(SKAction.sequence([spikeMove, actionMoveDone]))
+        addChild(spike2)
+        
+        let spike3 = spike.copy() as! SKSpriteNode
+        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination + spike.size.width*1.25 , y: spike.size.height*1.25), duration: TimeInterval(duration))
         spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.25, y: spike.position.y)
         spike3.run(SKAction.sequence([spikeMove, actionMoveDone]))
         addChild(spike3)
@@ -342,12 +370,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // add spike to block block 1/3 of the time
         if(Int(arc4random_uniform(75)) < 25){
-            addSpikeToBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
+            addSpikeToBottomOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
         }
         
         //add coins to block 50% of the time
         if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
             addCoinToBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
+        }
+        else{
+            if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
+                addSpikeToTopOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
+            }
         }
     }
     
@@ -360,9 +393,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func spikeCollidedWithEnemy(enemy: SKSpriteNode) {
         enemy.removeFromParent()
-        score = score+3;
         print("enemy and spike")
-        print(score)
     }
     
     func gameOver() {
