@@ -152,7 +152,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         run(SKAction.repeatForever(
             SKAction.sequence([
                 SKAction.run(addBlock),
-                SKAction.wait(forDuration: 2.0)
+                SKAction.wait(forDuration: 1.0)
                 ])
         ))
         
@@ -199,7 +199,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
-        if (player.position.y < 40) {
+        
+        if (!isGameOver && player.position.y < 40) {
             gameOver()
         }
         
@@ -243,12 +244,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         enemy.physicsBody?.mass = 0.03
     }
     
-    func addCoinToBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
+    func addCoinToBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
         
         let coin = SKSpriteNode(imageNamed: "coin")
-        var coinMove = SKAction.move(to: CGPoint(x:  centerXDestination, y:  coin.size.height*1.5), duration: TimeInterval(duration))
+        
+        let destHeight = blockDestHeight + coin.size.height*1.5
+        
+        var coinMove = SKAction.move(to: CGPoint(x:  centerXDestination, y: destHeight), duration: TimeInterval(duration))
     
-        coin.position = CGPoint(x: block.position.x, y: scene!.size.height + coin.size.height*1.5)
+        coin.position = CGPoint(x: block.position.x, y: block.position.y + coin.size.height*1.5)
         addChild(coin)
         coin.zPosition = 10
         coin.name = coinName
@@ -261,21 +265,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         coin.run(SKAction.sequence([coinMove, actionMoveDone]))
         
         let coin2 = coin.copy() as! SKSpriteNode
-        coinMove = SKAction.move(to: CGPoint(x:  centerXDestination - coin.size.width*1.5 , y:  coin.size.height*1.5), duration: TimeInterval(duration))
+        coinMove = SKAction.move(to: CGPoint(x:  centerXDestination - coin.size.width*1.5 , y: destHeight), duration: TimeInterval(duration))
         coin2.position = CGPoint(x: coin.position.x - coin.size.width*1.5, y: coin.position.y)
         coin2.run(SKAction.sequence([coinMove, actionMoveDone]))
         addChild(coin2)
         
         let coin3 = coin.copy() as! SKSpriteNode
-        coinMove = SKAction.move(to: CGPoint(x:  centerXDestination + coin.size.width*1.5 , y:  coin.size.height*1.5), duration: TimeInterval(duration))
+        coinMove = SKAction.move(to: CGPoint(x:  centerXDestination + coin.size.width*1.5 , y: destHeight), duration: TimeInterval(duration))
         coin3.position = CGPoint(x: coin.position.x + coin.size.width*1.5, y: coin.position.y)
         coin3.run(SKAction.sequence([coinMove, actionMoveDone]))
         addChild(coin3)
     }
     
-    func addSpikeToBottomOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
+    func addSpikeToBottomOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
         let spike = SKSpriteNode(imageNamed: "spikeDown")
-        var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y:  -spike.size.height*1.25), duration: TimeInterval(duration))
+        let destHeight = blockDestHeight - spike.size.height*1.25
+        var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y: destHeight), duration: TimeInterval(duration))
         spike.position = CGPoint(x: block.position.x, y: block.position.y - spike.size.height*1.25)
         addChild(spike)
         spike.zPosition = 10
@@ -289,21 +294,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spike.run(SKAction.sequence([spikeMove, actionMoveDone]))
         
         let spike2 = spike.copy() as! SKSpriteNode
-        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination - spike.size.width*1.25 , y:  -spike.size.height*1.25), duration: TimeInterval(duration))
-        spike2.position = CGPoint(x: spike.position.x - spike.size.width*1.25, y: spike.position.y)
+        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination - spike.size.width*1.05 , y: destHeight), duration: TimeInterval(duration))
+        spike2.position = CGPoint(x: spike.position.x - spike.size.width*1.05, y: spike.position.y)
         spike2.run(SKAction.sequence([spikeMove, actionMoveDone]))
         addChild(spike2)
         
         let spike3 = spike.copy() as! SKSpriteNode
-        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination + spike.size.width*1.25 , y:  -spike.size.height*1.25), duration: TimeInterval(duration))
-        spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.25, y: spike.position.y)
+        spikeMove = SKAction.move(to: CGPoint(x: centerXDestination + spike.size.width*1.05 , y: destHeight), duration: TimeInterval(duration))
+        spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.05, y: spike.position.y)
         spike3.run(SKAction.sequence([spikeMove, actionMoveDone]))
         addChild(spike3)
     }
     
-    func addSpikeToTopOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat){
+    func addSpikeToTopOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
         let spike = SKSpriteNode(imageNamed: "spikeUp")
-        var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y:  spike.size.height*1.25), duration: TimeInterval(duration))
+        let destHeight = blockDestHeight + spike.size.height*1.25
+        
+        var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y: destHeight), duration: TimeInterval(duration))
         spike.position = CGPoint(x: block.position.x, y: block.position.y + spike.size.height*1.25)
         addChild(spike)
         spike.zPosition = 10
@@ -317,70 +324,76 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spike.run(SKAction.sequence([spikeMove, actionMoveDone]))
         
         let spike2 = spike.copy() as! SKSpriteNode
-        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination - spike.size.width*1.25 , y: spike.size.height*1.25), duration: TimeInterval(duration))
-        spike2.position = CGPoint(x: spike.position.x - spike.size.width*1.25, y: spike.position.y)
+        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination - spike.size.width*1.05 , y: destHeight), duration: TimeInterval(duration))
+        spike2.position = CGPoint(x: spike.position.x - spike.size.width*1.05, y: spike.position.y)
         spike2.run(SKAction.sequence([spikeMove, actionMoveDone]))
         addChild(spike2)
         
         let spike3 = spike.copy() as! SKSpriteNode
-        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination + spike.size.width*1.25 , y: spike.size.height*1.25), duration: TimeInterval(duration))
-        spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.25, y: spike.position.y)
+        spikeMove = SKAction.move(to: CGPoint(x:  centerXDestination + spike.size.width*1.05 , y: destHeight), duration: TimeInterval(duration))
+        spike3.position = CGPoint(x: spike.position.x + spike.size.width*1.05, y: spike.position.y)
         spike3.run(SKAction.sequence([spikeMove, actionMoveDone]))
         addChild(spike3)
     }
     
     func addBlock() {
-        let block = SKSpriteNode(imageNamed: "block")
-    
-        var actionMove: SKAction
-        var centerXDestination: CGFloat
-        let duration = CGFloat(5.0)
-    
-        //come in from right
+        
+        //do this 4 out of every  times
         if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-            //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
-            block.position = CGPoint(x: size.width + block.size.width/2, y: scene!.size.height)
-            addChild(block)
-            //let actualDuration = random(min: CGFloat(2.0), max: CGFloat(4.0))
-            actionMove = SKAction.move(to: CGPoint(x: -block.size.width, y: 0), duration: TimeInterval(duration))
-            centerXDestination = -block.size.width
-
-
-        }
-        //come in from left
-        else{
-            //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
-            block.position = CGPoint(x: block.size.width/2 - size.width, y: scene!.size.height)
-            addChild(block)
             
-    //todo shorten the duration as time increases
-            //let actualDuration = random(min: CGFloat(3.0), max: CGFloat(5.0))
-            actionMove = SKAction.move(to: CGPoint(x: block.size.width*4, y: 0), duration: TimeInterval(duration))
-            centerXDestination = block.size.width*4
-
-        }
-        
-        block.name = blockName
-        block.physicsBody = SKPhysicsBody(rectangleOf: block.frame.size)
-        block.physicsBody!.isDynamic = false
-        block.physicsBody?.affectedByGravity = true
-        block.physicsBody?.mass = 0.1
-        let actionMoveDone = SKAction.removeFromParent()
-        block.run(SKAction.sequence([actionMove, actionMoveDone]))
-        
-        // add spike to block block 1/3 of the time
-        if(Int(arc4random_uniform(75)) < 25){
-            addSpikeToBottomOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
-        }
-        
-        //add coins to block 50% of the time
-        if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-            addCoinToBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
-        }
-        else{
+            let block = SKSpriteNode(imageNamed: "block")
+            
+            var actionMove: SKAction
+            var centerXDestination: CGFloat
+            let duration = CGFloat(4.0)
+            let blockDestHeight = -block.size.height + (random(min: CGFloat(0.0), max: CGFloat(5.0)) * block.size.height)
+           // let duration = random(min: CGFloat(3.0), max: CGFloat(4.0))
+            
+            //come in from right
             if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-                addSpikeToTopOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration)
+                //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
+                block.position = CGPoint(x: size.width + block.size.width/2, y: scene!.size.height + block.size.height*1.5 - blockDestHeight)
+                addChild(block)
+                //let actualDuration = random(min: CGFloat(2.0), max: CGFloat(4.0))
+                actionMove = SKAction.move(to: CGPoint(x: -block.size.width/2, y: blockDestHeight), duration: TimeInterval(duration))
+                centerXDestination = -block.size.width/2
+                
             }
+                //come in from left
+            else{
+                //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
+                block.position = CGPoint(x: -block.size.width/2, y: scene!.size.height + block.size.height*1.5 - blockDestHeight)
+                addChild(block)
+                
+                //todo shorten the duration as time increases
+                //let actualDuration = random(min: CGFloat(3.0), max: CGFloat(5.0))
+                actionMove = SKAction.move(to: CGPoint(x: scene!.size.width + block.size.width, y: blockDestHeight), duration: TimeInterval(duration))
+                centerXDestination = scene!.size.width + block.size.width
+            }
+            
+            block.name = blockName
+            block.physicsBody = SKPhysicsBody(rectangleOf: block.frame.size)
+            block.physicsBody!.isDynamic = false
+            block.physicsBody?.affectedByGravity = true
+            block.physicsBody?.mass = 0.1
+            let actionMoveDone = SKAction.removeFromParent()
+            block.run(SKAction.sequence([actionMove, actionMoveDone]))
+            
+            // add spike to block block 1/3 of the time
+            if(Int(arc4random_uniform(75)) < 25){
+                addSpikeToBottomOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+            }
+            
+            //add coins to block 50% of the time
+            if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
+                addCoinToBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+            }
+            else{
+                if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
+                    addSpikeToTopOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+                }
+            }
+            
         }
     }
     
