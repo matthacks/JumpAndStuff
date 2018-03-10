@@ -29,7 +29,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    let player = SKSpriteNode(imageNamed: "player")
+    let player = SKSpriteNode(imageNamed: "player2")
     let playerName = "player"
     let blockName = "block"
     let enemyName = "enemy"
@@ -39,6 +39,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var destX: CGFloat = 0.0
     let swipeUp = UISwipeGestureRecognizer()
     let swipeDown = UISwipeGestureRecognizer()
+    let swipeLeft = UISwipeGestureRecognizer()
+    let swipeRight = UISwipeGestureRecognizer()
     var isGameOver = false
     
     var worldNode: SKNode?
@@ -49,7 +51,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     @objc func swipeUpPlayerJump(){
         if let player = childNode(withName: playerName) as? SKSpriteNode {
-            player.physicsBody!.applyForce(CGVector(dx:0, dy:1000))
+            player.physicsBody!.applyForce(CGVector(dx:0, dy:500))
         }
         else{
             let gameScene:GameScene = GameScene(size: self.view!.bounds.size) // create your new scene
@@ -61,7 +63,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     @objc func swipeDownPlayerRushDown(){
         if let player = childNode(withName: playerName) as? SKSpriteNode {
-            player.physicsBody!.applyForce(CGVector(dx:0, dy:-1000))
+            player.physicsBody!.applyForce(CGVector(dx:0, dy:-250))
+        }
+    }
+    
+    @objc func swipeLeftMovePlayer(){
+        if let player = childNode(withName: playerName) as? SKSpriteNode {
+            player.physicsBody!.applyForce(CGVector(dx:-250, dy:0))
+        }
+    }
+    
+    @objc func swipeRightMovePlayer(){
+        if let player = childNode(withName: playerName) as? SKSpriteNode {
+            player.physicsBody!.applyForce(CGVector(dx:500, dy:0))
         }
     }
     
@@ -123,6 +137,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         player.position = CGPoint(x: size.width/2, y: size.height*0.5)
         player.name = playerName
+        //player.physicsBody = SKPhysicsBody(texture: player.texture!, size: player.size)
         player.physicsBody = SKPhysicsBody(rectangleOf: player.frame.size)
         player.physicsBody!.isDynamic = true
         player.physicsBody!.mass = 0.02
@@ -132,7 +147,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.physicsBody!.collisionBitMask = PhysicsCategory.All
         addChild(player)
         
-        physicsWorld.gravity = CGVector(dx: 0.0, dy: -9.8)
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: -2.0)
         physicsWorld.contactDelegate = self
         
         swipeUp.addTarget(self, action: #selector(GameScene.swipeUpPlayerJump))
@@ -143,6 +158,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         swipeDown.direction = .down
         self.view!.addGestureRecognizer(swipeDown)
         
+        swipeLeft.addTarget(self, action: #selector(GameScene.swipeLeftMovePlayer))
+        swipeLeft.direction = .left
+        self.view!.addGestureRecognizer(swipeLeft)
+        
+        swipeRight.addTarget(self, action: #selector(GameScene.swipeRightMovePlayer))
+        swipeRight.direction = .right
+        self.view!.addGestureRecognizer(swipeRight)
+        
         cam.position = CGPoint(x: scene!.size.width / 2,
                                y: scene!.size.height / 2)
         addChild(cam)
@@ -152,7 +175,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         run(SKAction.repeatForever(
             SKAction.sequence([
                 SKAction.run(addBlock),
-                SKAction.wait(forDuration: 1.0)
+                SKAction.wait(forDuration: 0.5)
                 ])
         ))
         
@@ -165,28 +188,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         ))
     }
     
-    func processUserMotion(forUpdate currentTime: CFTimeInterval) {
-        if let player = childNode(withName: playerName) as? SKSpriteNode {
-            if let data = motionManager.accelerometerData {
-                if fabs(data.acceleration.x) > 0.2 {
-                    player.physicsBody!.applyForce(CGVector(dx: 30 * CGFloat(data.acceleration.x), dy:0))
-                    
-                    if(data.acceleration.x > 0){
-                        player.texture = SKTexture(imageNamed: "playerRight")
-                    }
-                    else{
-                        player.texture = SKTexture(imageNamed: "playerLeft")
-                    }
-                }
-            }
-        }
-    }
+//    func processUserMotion(forUpdate currentTime: CFTimeInterval) {
+//        if let player = childNode(withName: playerName) as? SKSpriteNode {
+//            if let data = motionManager.accelerometerData {
+//                if fabs(data.acceleration.x) > 0.2 {
+//                    player.physicsBody!.applyForce(CGVector(dx: 30 * CGFloat(data.acceleration.x), dy:0))
+//
+////                    if(data.acceleration.x > 0){
+////                        player.texture = SKTexture(imageNamed: "playerRight")
+////                    }
+////                    else{
+////                        player.texture = SKTexture(imageNamed: "playerLeft")
+////                    }
+//                }
+//            }
+//        }
+//    }
     
     override func update(_ currentTime: CFTimeInterval){
         super.update(currentTime)
         
         // enables tilt controls
-        processUserMotion(forUpdate: currentTime)
+        //processUserMotion(forUpdate: currentTime)
         
         self.enumerateChildNodes(withName: "enemy") {
             node, stop in
@@ -207,7 +230,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         //move background
         
         // calculate the new position
-        let yNewPosition = worldNode!.position.y + (yOrgPosition! - 5)
+        let yNewPosition = worldNode!.position.y + (yOrgPosition! + 5)
         
         // Check if right end is reached
         if yNewPosition <= -(3 * nodeTileHeight) {
@@ -278,10 +301,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func addSpikeToBottomOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
-        let spike = SKSpriteNode(imageNamed: "spikeDown")
+        let spike = SKSpriteNode(imageNamed: "spikeDown2")
         let destHeight = blockDestHeight - spike.size.height*1.25
         var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y: destHeight), duration: TimeInterval(duration))
-        spike.position = CGPoint(x: block.position.x, y: block.position.y - spike.size.height*1.25)
+        spike.position = CGPoint(x: block.position.x, y: block.position.y - spike.size.height)
         addChild(spike)
         spike.zPosition = 10
         spike.name = spikeName
@@ -307,11 +330,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func addSpikeToTopOfBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
-        let spike = SKSpriteNode(imageNamed: "spikeUp")
+        let spike = SKSpriteNode(imageNamed: "spikeUp2")
         let destHeight = blockDestHeight + spike.size.height*1.25
         
         var spikeMove = SKAction.move(to: CGPoint(x: centerXDestination, y: destHeight), duration: TimeInterval(duration))
-        spike.position = CGPoint(x: block.position.x, y: block.position.y + spike.size.height*1.25)
+        spike.position = CGPoint(x: block.position.x, y: block.position.y + spike.size.height)
         addChild(spike)
         spike.zPosition = 10
         spike.name = spikeName
@@ -338,38 +361,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func addBlock() {
         
-        //do this 4 out of every  times
+        //do this 1 out of every 2 times
         if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
             
-            let block = SKSpriteNode(imageNamed: "block")
+            let block = SKSpriteNode(imageNamed: "block2")
             
             var actionMove: SKAction
-            var centerXDestination: CGFloat
-            let duration = CGFloat(4.0)
-            let blockDestHeight = -block.size.height + (random(min: CGFloat(0.0), max: CGFloat(5.0)) * block.size.height)
-           // let duration = random(min: CGFloat(3.0), max: CGFloat(4.0))
+            let duration = CGFloat(2.0)
+            let blockStartHeight = -block.size.height + (random(min: CGFloat(0.0), max: CGFloat(5.0)) * block.size.height)
+            let blockDestHeight = scene!.size.height + block.size.height*1.5 - blockStartHeight
             
-            //come in from right
-            if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-                //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
-                block.position = CGPoint(x: size.width + block.size.width/2, y: scene!.size.height + block.size.height*1.5 - blockDestHeight)
-                addChild(block)
-                //let actualDuration = random(min: CGFloat(2.0), max: CGFloat(4.0))
-                actionMove = SKAction.move(to: CGPoint(x: -block.size.width/2, y: blockDestHeight), duration: TimeInterval(duration))
-                centerXDestination = -block.size.width/2
-                
-            }
-                //come in from left
-            else{
-                //let actualY = random(min: block.size.height/2, max: size.height - block.size.height/2)
-                block.position = CGPoint(x: -block.size.width/2, y: scene!.size.height + block.size.height*1.5 - blockDestHeight)
-                addChild(block)
-                
-                //todo shorten the duration as time increases
-                //let actualDuration = random(min: CGFloat(3.0), max: CGFloat(5.0))
-                actionMove = SKAction.move(to: CGPoint(x: scene!.size.width + block.size.width, y: blockDestHeight), duration: TimeInterval(duration))
-                centerXDestination = scene!.size.width + block.size.width
-            }
+            
+            let xStart = random(min: -block.size.width, max: scene!.size.width + block.size.width)
+            let xDest = random(min: -block.size.width, max: scene!.size.width + block.size.width)
+            
+ 
+            //create the block
+            block.position = CGPoint(x: xStart, y: blockStartHeight)
+            addChild(block)
+            actionMove = SKAction.move(to: CGPoint(x: xDest, y: blockDestHeight), duration: TimeInterval(duration))
             
             block.name = blockName
             block.physicsBody = SKPhysicsBody(rectangleOf: block.frame.size)
@@ -381,16 +391,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             // add spike to block block 1/3 of the time
             if(Int(arc4random_uniform(75)) < 25){
-                addSpikeToBottomOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+                addSpikeToBottomOfBlock(centerXDestination: xDest, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
             }
-            
+
             //add coins to block 50% of the time
             if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-                addCoinToBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+                addCoinToBlock(centerXDestination: xDest, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
             }
             else{
                 if(Bool(truncating: arc4random_uniform(2) as NSNumber)){
-                    addSpikeToTopOfBlock(centerXDestination: centerXDestination, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
+                    addSpikeToTopOfBlock(centerXDestination: xDest, actionMoveDone: actionMoveDone, block: block, duration: duration, blockDestHeight: blockDestHeight)
                 }
             }
             
@@ -445,7 +455,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             secondBody = contact.bodyA
         }
         
-        if(!isGameOver){
             if ((firstBody.categoryBitMask == PhysicsCategory.Coin) &&
                 (secondBody.categoryBitMask == PhysicsCategory.Player)) {
                 if let coin = firstBody.node as? SKSpriteNode {
@@ -462,7 +471,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 (secondBody.categoryBitMask == PhysicsCategory.Player)) {
                 gameOver()
             }
-        }
         
     }
 
