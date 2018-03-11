@@ -9,6 +9,7 @@
 import SpriteKit
 import GameplayKit
 import CoreMotion
+import AVKit
 
 struct PhysicsCategory {
     static let None:   UInt32 = 0
@@ -29,7 +30,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    let player = SKSpriteNode(imageNamed: "player2")
+    let player = spriteNodeWithSound(imageNamed: "player2")
     let playerName = "player"
     let blockName = "block"
     let enemyName = "enemy"
@@ -42,12 +43,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let swipeLeft = UISwipeGestureRecognizer()
     let swipeRight = UISwipeGestureRecognizer()
     var isGameOver = false
+    var backgroundMusic: SKAudioNode!
     
     var worldNode: SKNode?
     var nodeTileHeight: CGFloat = 0.0
     var yOrgPosition: CGFloat?
     
     var cam: SKCameraNode = SKCameraNode()
+    
+    let coin1Sound = SKAudioNode(fileNamed: "coin1.mp3")
+    let coin2Sound = SKAudioNode(fileNamed: "coin2.mp3")
+    let coin3Sound = SKAudioNode(fileNamed: "coin3.mp3")
+    let deathSound = SKAudioNode(fileNamed: "deathsound.mp3")
+
+    class spriteNodeWithSound: SKSpriteNode {
+        var spriteSound: SKAudioNode!
+    }
+
+    func initializeAudioPlayers(){
+        coin1Sound.autoplayLooped = false
+        self.addChild(coin1Sound)
+        
+        coin2Sound.autoplayLooped = false
+        self.addChild(coin2Sound)
+        
+        coin3Sound.autoplayLooped = false
+        self.addChild(coin3Sound)
+        
+        player.spriteSound = deathSound
+        deathSound.autoplayLooped = false
+        self.addChild(deathSound)
+    }
+
+    
+    func playSound(audioNode: SKAudioNode) {
+        audioNode.run(SKAction.play())
+    }
     
     @objc func swipeUpPlayerJump(){
         if let player = childNode(withName: playerName) as? SKSpriteNode {
@@ -81,8 +112,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func didMove(to view: SKView) {
         
+        initializeAudioPlayers()
+        
         isGameOver = false
         
+        let dictToSend: [String: String] = ["fileToPlay": "electroIndie" ]  //would play a file named "MusicOrWhatever.mp3"
+        
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "PlayBackgroundSound"), object: self, userInfo:dictToSend) //posts the notification
+
         let backgroundNode = SKSpriteNode(imageNamed: "background1")
         backgroundNode.size = CGSize(width: self.frame.width, height: self.frame.height)
         backgroundNode.anchorPoint = CGPoint(x: 0, y: 0)
@@ -223,7 +260,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-        if (!isGameOver && player.position.y < 40) {
+        if (!isGameOver && (player.position.y < 40 ||
+            (player.position.y > (scene?.size.height)! || player.position.x > (scene?.size.width)! || player.position.x < 0))) {
             gameOver()
         }
         
@@ -269,7 +307,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func addCoinToBlock(centerXDestination: CGFloat, actionMoveDone: SKAction, block: SKSpriteNode, duration: CGFloat, blockDestHeight: CGFloat){
         
-        let coin = SKSpriteNode(imageNamed: "coin")
+        let coin = spriteNodeWithSound(imageNamed: "coin")
         
         let destHeight = blockDestHeight + coin.size.height*1.5
         
@@ -282,21 +320,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         coin.physicsBody = SKPhysicsBody(rectangleOf: coin.frame.size)
         coin.physicsBody!.isDynamic = false
         coin.physicsBody?.affectedByGravity = true
-        coin.physicsBody?.mass = 0.1
+        coin.physicsBody?.mass = 0.0
         coin.physicsBody?.categoryBitMask = PhysicsCategory.Coin
         coin.physicsBody?.contactTestBitMask = PhysicsCategory.Player
+        coin.spriteSound = coin1Sound
         coin.run(SKAction.sequence([coinMove, actionMoveDone]))
         
-        let coin2 = coin.copy() as! SKSpriteNode
+        let coin2 = coin.copy() as! spriteNodeWithSound
         coinMove = SKAction.move(to: CGPoint(x:  centerXDestination - coin.size.width*1.5 , y: destHeight), duration: TimeInterval(duration))
         coin2.position = CGPoint(x: coin.position.x - coin.size.width*1.5, y: coin.position.y)
         coin2.run(SKAction.sequence([coinMove, actionMoveDone]))
+        coin2.spriteSound = coin2Sound
         addChild(coin2)
         
-        let coin3 = coin.copy() as! SKSpriteNode
+        let coin3 = coin.copy() as! spriteNodeWithSound
         coinMove = SKAction.move(to: CGPoint(x:  centerXDestination + coin.size.width*1.5 , y: destHeight), duration: TimeInterval(duration))
         coin3.position = CGPoint(x: coin.position.x + coin.size.width*1.5, y: coin.position.y)
         coin3.run(SKAction.sequence([coinMove, actionMoveDone]))
+        coin3.spriteSound = coin3Sound
         addChild(coin3)
     }
     
@@ -407,7 +448,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    func coinCollidedWithPlayer(coin: SKSpriteNode) {
+    func coinCollidedWithPlayer(coin: spriteNodeWithSound) {
+        coin.spriteSound.run(SKAction.play())
         coin.removeFromParent()
         score = score+1;
         print("player and coin")
@@ -422,22 +464,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func gameOver() {
        //todo
         let myLabel = SKLabelNode(fontNamed:"Chalkduster")
-        myLabel.text = "GameOver!"
+        myLabel.text = "Game Over!"
         myLabel.fontColor = SKColor.black
-        myLabel.fontSize = 55
+        myLabel.fontSize = 40
         myLabel.position = CGPoint(x: size.width * 0.5, y: size.height * 0.65)
         myLabel.zPosition = 20
         self.addChild(myLabel)
         
         let label = SKLabelNode(fontNamed:"Chalkduster")
-        label.text = "(swipe up to play again)!"
+        label.text = "(swipe up to play again)"
         label.fontColor = SKColor.black
-        label.fontSize = 25
+        label.fontSize = 20
         label.zPosition = 20
-        label.position = CGPoint(x: size.width * 0.5, y: size.height * 0.55)
+        label.position = CGPoint(x: size.width * 0.5, y: size.height * 0.60)
         self.addChild(label)
         
         isGameOver = true
+        player.spriteSound.run(SKAction.play())
+        print("game over being called")
         player.removeFromParent()
     }
 
@@ -458,7 +502,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             if ((firstBody.categoryBitMask == PhysicsCategory.Coin) &&
                 (secondBody.categoryBitMask == PhysicsCategory.Player)) {
                 if let coin = firstBody.node as? SKSpriteNode {
-                    coinCollidedWithPlayer(coin: coin)
+                    coinCollidedWithPlayer(coin: coin as! GameScene.spriteNodeWithSound)
                 }
             }
             else if ((firstBody.categoryBitMask == PhysicsCategory.Spike) &&
@@ -469,7 +513,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
             else if ((firstBody.categoryBitMask == PhysicsCategory.Spike) &&
                 (secondBody.categoryBitMask == PhysicsCategory.Player)) {
-                gameOver()
+                //todo - figure out why this is repeatedly getting called
+                //this should not be reapeating...adding temp fix
+                if(!isGameOver){
+                    gameOver()
+                }
+                
             }
         
     }
